@@ -26,6 +26,9 @@
 #include "skydroid_gamepad_interface.hpp"
 #include "retroid_gamepad_interface.hpp"
 #include "keyboard_interface.hpp"
+#include "gamepad_interface.hpp"
+#include <fcntl.h>
+#include <unistd.h>
 #ifdef USE_RAISIM
     #include "simulation/jueying_raisim_simulation.hpp"
 #endif
@@ -115,7 +118,17 @@ public:
         std::string urdf_path = "";
         std::string mjcf_path = "";
         #ifdef BUILD_SIMULATION
-            uc_ptr_ = std::make_shared<KeyboardInterface>();
+            // 检测Xbox手柄是否存在
+            std::string js_device = "/dev/input/js0";
+            int js_fd = open(js_device.c_str(), O_RDONLY);
+            if(js_fd >= 0){
+                close(js_fd);
+                std::cout << "Xbox gamepad detected, using GamepadInterface" << std::endl;
+                uc_ptr_ = std::make_shared<GamepadInterface>(js_device);
+            } else {
+                std::cout << "No Xbox gamepad detected, using KeyboardInterface" << std::endl;
+                uc_ptr_ = std::make_shared<KeyboardInterface>();
+            }
         #else
             uc_ptr_ = std::make_shared<RetroidGamepadInterface>(12121);
         #endif

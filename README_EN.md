@@ -46,10 +46,22 @@ cd build
 
 tips：right click simulator window and select "always on top"
 
+**Keyboard Control:**
 - z： default position
 - c： rl control default position
 - wasd：forward/leftward/backward/rightward
 - qe：clockwise/counter clockwise
+
+**Xbox Gamepad Control:**
+
+In simulation mode, the system will automatically detect an Xbox gamepad. If detected, it will use gamepad control; otherwise, it will use keyboard control.
+
+- Left Bumper (LB): Stand up (corresponds to keyboard z)
+- Right Bumper (RB): Enter RL control mode (corresponds to keyboard c)
+- Left Trigger (LT): Joint damping mode (corresponds to keyboard r)
+- Left Stick Up/Down: Forward/backward movement (corresponds to keyboard ws)
+- Left Stick Left/Right: Side movement (corresponds to keyboard ad)
+- Right Stick Left/Right: Turning (corresponds to keyboard qe)
 
 
 
