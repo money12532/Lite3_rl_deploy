@@ -19,7 +19,7 @@
 using namespace interface;
 using namespace types;
 
-class GamepadInterface : public UserCommandInterface
+class XboxGamepadInterface : public UserCommandInterface
 {
     /**
      * @brief Xbox手柄按键映射说明
@@ -74,7 +74,7 @@ private:
     }
 
 public:
-    GamepadInterface(const std::string& js_device = "/dev/input/js0"){
+    XboxGamepadInterface(const std::string& js_device = "/dev/input/js0"){
         std::memset(&usr_cmd_, 0, sizeof(usr_cmd_));
         js_fd_ = -1;
         std::cout << "Using Xbox Gamepad Command Interface" << std::endl;
@@ -126,7 +126,7 @@ public:
         }
     }
 
-    ~GamepadInterface(){
+    ~XboxGamepadInterface(){
         if(js_fd_ >= 0) close(js_fd_);
     }
 
@@ -136,7 +136,7 @@ public:
             return;
         }
         start_thread_flag_ = true;
-        gp_thread_ = std::thread(std::bind(&GamepadInterface::Run, this));
+        gp_thread_ = std::thread(std::bind(&XboxGamepadInterface::Run, this));
     }
 
     virtual void Stop(){

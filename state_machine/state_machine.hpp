@@ -26,7 +26,7 @@
 #include "skydroid_gamepad_interface.hpp"
 #include "retroid_gamepad_interface.hpp"
 #include "keyboard_interface.hpp"
-#include "gamepad_interface.hpp"
+#include "xbox_gamepad_interface.hpp"
 #include <fcntl.h>
 #include <unistd.h>
 #ifdef USE_RAISIM
@@ -123,8 +123,8 @@ public:
             int js_fd = open(js_device.c_str(), O_RDONLY);
             if(js_fd >= 0){
                 close(js_fd);
-                std::cout << "Xbox gamepad detected, using GamepadInterface" << std::endl;
-                uc_ptr_ = std::make_shared<GamepadInterface>(js_device);
+                std::cout << "Xbox gamepad detected, using XboxGamepadInterface" << std::endl;
+                uc_ptr_ = std::make_shared<XboxGamepadInterface>(js_device);
             } else {
                 std::cout << "No Xbox gamepad detected, using KeyboardInterface" << std::endl;
                 uc_ptr_ = std::make_shared<KeyboardInterface>();
