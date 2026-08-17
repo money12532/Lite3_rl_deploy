@@ -83,7 +83,7 @@ ports = [43897]
 # apply code_modification
 
 # computer and gamepad should both connect to WiFi
-# WiFi: Lite*******
+# WiFi: YSC-JYML-xxxxxx
 # Passward: 12345678 (If wrong, contact technical support)
 
 # scp to transfer files to quadruped (open a terminal on your local computer)
