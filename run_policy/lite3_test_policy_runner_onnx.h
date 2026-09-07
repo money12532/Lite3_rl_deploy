@@ -38,7 +38,9 @@ private:
 
     std::string model_path_;
 
-    const int obs_dim_ = 45;
+    // Legacy policies use 45 observations.  Natural-trot policies append a
+    // sine/cosine gait clock and therefore use 47.
+    int obs_dim_ = 45;
     const int act_dim_ = 12;
 
     VecXf current_obs_;

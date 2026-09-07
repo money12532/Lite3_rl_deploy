@@ -6,7 +6,7 @@
 #include <functional>
 #include <termios.h>
 
-#define AXIS_STEP 0.1
+constexpr float KEYBOARD_AXIS_STEP = 0.25f;
 
 using namespace interface;
 using namespace types;
@@ -101,29 +101,29 @@ public:
                     break;
                     case RobotMotionState::RLControlMode:
                         if(input=='w') {
-                            usr_cmd_.forward_vel_scale+=AXIS_STEP;
+                            usr_cmd_.forward_vel_scale+=KEYBOARD_AXIS_STEP;
                             forward_time_record = current_time;
                         }  
                         else if(input=='s') {
-                            usr_cmd_.forward_vel_scale-=AXIS_STEP;
+                            usr_cmd_.forward_vel_scale-=KEYBOARD_AXIS_STEP;
                             forward_time_record = current_time;
                         }
 
                         if(input=='a') {
-                            usr_cmd_.side_vel_scale+=AXIS_STEP;
+                            usr_cmd_.side_vel_scale+=KEYBOARD_AXIS_STEP;
                             side_time_record = current_time;
                         }
                         else if(input=='d') {
-                            usr_cmd_.side_vel_scale-=AXIS_STEP;
+                            usr_cmd_.side_vel_scale-=KEYBOARD_AXIS_STEP;
                             side_time_record = current_time;
                         }
                         
                         if(input=='q') {
-                            usr_cmd_.turnning_vel_scale+=AXIS_STEP;
+                            usr_cmd_.turnning_vel_scale+=KEYBOARD_AXIS_STEP;
                             turnning_time_record = current_time;
                         }
                         else if(input=='e') {
-                            usr_cmd_.turnning_vel_scale-=AXIS_STEP;
+                            usr_cmd_.turnning_vel_scale-=KEYBOARD_AXIS_STEP;
                             turnning_time_record = current_time;
                         }
 
@@ -135,6 +135,16 @@ public:
                         ClipNumber(usr_cmd_.forward_vel_scale, -1., 1.);
                         ClipNumber(usr_cmd_.side_vel_scale, -1., 1.);
                         ClipNumber(usr_cmd_.turnning_vel_scale, -1., 1.);
+
+                        if(input=='x') {
+                            usr_cmd_.forward_vel_scale = 0.f;
+                            usr_cmd_.side_vel_scale = 0.f;
+                            usr_cmd_.turnning_vel_scale = 0.f;
+                        }
+                        std::cout << "normalized velocity command: "
+                                  << usr_cmd_.forward_vel_scale << " "
+                                  << usr_cmd_.side_vel_scale << " "
+                                  << usr_cmd_.turnning_vel_scale << std::endl;
                     break;
                     default:
                         break;
@@ -146,5 +156,4 @@ public:
     }
 
 };
-
 

@@ -27,6 +27,7 @@
 #include "retroid_gamepad_interface.hpp"
 #include "keyboard_interface.hpp"
 #include "xbox_gamepad_interface.hpp"
+#include <cstdlib>
 #include <fcntl.h>
 #include <unistd.h>
 #ifdef USE_RAISIM
@@ -118,6 +119,12 @@ public:
         std::string urdf_path = "";
         std::string mjcf_path = "";
         #ifdef BUILD_SIMULATION
+            // Set LITE3_FORCE_KEYBOARD=1 for reproducible terminal-driven tests.
+            const char* force_keyboard = std::getenv("LITE3_FORCE_KEYBOARD");
+            if (force_keyboard != nullptr && std::string(force_keyboard) == "1") {
+                std::cout << "LITE3_FORCE_KEYBOARD=1, using KeyboardInterface" << std::endl;
+                uc_ptr_ = std::make_shared<KeyboardInterface>();
+            } else {
             // 检测Xbox手柄是否存在
             std::string js_device = "/dev/input/js0";
             int js_fd = open(js_device.c_str(), O_RDONLY);
@@ -128,6 +135,7 @@ public:
             } else {
                 std::cout << "No Xbox gamepad detected, using KeyboardInterface" << std::endl;
                 uc_ptr_ = std::make_shared<KeyboardInterface>();
+            }
             }
         #else
             uc_ptr_ = std::make_shared<RetroidGamepadInterface>(12121);

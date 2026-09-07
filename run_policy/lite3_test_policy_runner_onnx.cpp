@@ -16,7 +16,10 @@
 
 #include "basic_function.hpp"
 
+#include <cstdlib>
+#include <cmath>
 #include <iostream>
+#include <stdexcept>
 #include <unordered_map>
 
 // ---------------------------------------------------------------------------
@@ -48,13 +51,22 @@ Lite3TestPolicyRunnerONNX::Lite3TestPolicyRunnerONNX(std::string policy_name)
       joint_pos_rl(12),
       joint_vel_rl(12) {
 
-    model_path_ = GetAbsPath() + "/../policy/ppo/policy.onnx";
+    const char* policy_path = std::getenv("LITE3_POLICY_PATH");
+    model_path_ = policy_path != nullptr
+        ? std::string(policy_path)
+        : GetAbsPath() + "/../policy/ppo/policy.onnx";
     std::cout << "[ONNX INIT] Loading model: " << model_path_ << std::endl;
 
     ort_->session_options.SetIntraOpNumThreads(1);
     ort_->session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
     ort_->session = Ort::Session(ort_->env, model_path_.c_str(), ort_->session_options);
     std::cout << "[ONNX INIT] Model loaded successfully.\n";
+
+    const auto input_shape = ort_->session.GetInputTypeInfo(0).GetTensorTypeAndShapeInfo().GetShape();
+    if (input_shape.size() != 2 || (input_shape[1] != 45 && input_shape[1] != 47)) {
+        throw std::runtime_error("Lite3 policy must have input shape [1,45] or [1,47]");
+    }
+    obs_dim_ = static_cast<int>(input_shape[1]);
 
     ort_->input_names  = {"obs"};
     ort_->output_names = {"actions"};
@@ -91,9 +103,13 @@ Lite3TestPolicyRunnerONNX::Lite3TestPolicyRunnerONNX(std::string policy_name)
 
     kp_ = 30. * VecXf::Ones(12);
     kd_ =  1. * VecXf::Ones(12);
-    max_cmd_vel_ << 0.8, 0.8, 0.8;
+    // Match the command ranges used by the stable flat model.
+    max_cmd_vel_ << 1.0, 0.4, 0.6;
 
-    tmp_action = VecXf(act_dim_);
+    current_obs_ = VecXf::Zero(obs_dim_);
+    last_action = VecXf::Zero(act_dim_);
+    action = VecXf::Zero(act_dim_);
+    tmp_action = VecXf::Zero(act_dim_);
     ra.goal_joint_pos = VecXf::Zero(act_dim_);
     ra.goal_joint_vel = VecXf::Zero(act_dim_);
     ra.tau_ff         = VecXf::Zero(act_dim_);
@@ -124,7 +140,11 @@ Lite3TestPolicyRunnerONNX::Lite3TestPolicyRunnerONNX(std::string policy_name)
         std::cout << policy_name_ << " ONNX policy network test success" << std::endl;
     }
 
-    decimation_ = 12;
+    // Training uses dt=0.005 and decimation=4, i.e. one policy action every
+    // 20 ms.  Keep the environment override for controlled experiments.
+    const char* decimation = std::getenv("LITE3_POLICY_DECIMATION");
+    decimation_ = decimation != nullptr ? std::stoi(decimation) : 20;
+    std::cout << "[ONNX INIT] Policy decimation: " << decimation_ << std::endl;
 }
 
 // The destructor must be defined in the .cpp where OrtImpl is complete.
@@ -142,6 +162,7 @@ void Lite3TestPolicyRunnerONNX::DisplayPolicyInfo() {
 void Lite3TestPolicyRunnerONNX::OnEnter() {
     run_cnt_ = 0;
     current_obs_.setZero(obs_dim_);
+    last_action.setZero(act_dim_);
     std::cout << "[ONNX ENTER] PolicyRunner entered: " << policy_name_ << std::endl;
 }
 
@@ -157,12 +178,27 @@ RobotAction Lite3TestPolicyRunnerONNX::GetRobotAction(const RobotBasicState& ro)
     joint_pos_rl -= dof_pos_default_policy;
 
     current_obs_.setZero(obs_dim_);
-    current_obs_ << base_omega,
-                    projected_gravity,
-                    cmd_vel,
-                    joint_pos_rl,
-                    joint_vel_rl,
-                    last_action;
+    if (obs_dim_ == 47) {
+        constexpr float policy_dt = 0.020f;
+        constexpr float gait_cycle_time = 0.60f;
+        const float phase_angle = 2.0f * static_cast<float>(M_PI)
+                                * (static_cast<float>(run_cnt_) * policy_dt / gait_cycle_time);
+        current_obs_ << base_omega,
+                        projected_gravity,
+                        cmd_vel,
+                        joint_pos_rl,
+                        joint_vel_rl,
+                        last_action,
+                        std::sin(phase_angle),
+                        std::cos(phase_angle);
+    } else {
+        current_obs_ << base_omega,
+                        projected_gravity,
+                        cmd_vel,
+                        joint_pos_rl,
+                        joint_vel_rl,
+                        last_action;
+    }
 
     std::array<int64_t, 2> input_shape{1, obs_dim_};
 

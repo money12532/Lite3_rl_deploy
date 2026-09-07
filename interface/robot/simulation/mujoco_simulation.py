@@ -75,6 +75,16 @@ class MuJoCoSimulation:
         self.viewer = None
         if USE_VIEWER:
             self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
+            # The model includes a large scene and staircase. MuJoCo's automatic
+            # camera framing can otherwise place the eye at or below the floor.
+            torso_id = mujoco.mj_name2id(
+                self.model, mujoco.mjtObj.mjOBJ_BODY, "TORSO"
+            )
+            self.viewer.cam.type = mujoco.mjtCamera.mjCAMERA_TRACKING
+            self.viewer.cam.trackbodyid = torso_id
+            self.viewer.cam.distance = 2.0
+            self.viewer.cam.azimuth = 135.0
+            self.viewer.cam.elevation = -20.0
 
     def _set_initial_pose(self, key: str):
         """Set joint positions to match PyBullet initial angles."""
@@ -96,6 +106,8 @@ class MuJoCoSimulation:
         q_world = self.data.qpos[3:7]
         rpy = self.quaternion_to_euler(q_world)
         angvel_b = self.data.qvel[3:6]
+        print(f"{Fore.BLUE}[Base] Position   :{Style.RESET_ALL} {format_array(self.data.qpos[:3])}")
+        print(f"{Fore.BLUE}[Base] Linear Vel :{Style.RESET_ALL} {format_array(self.data.qvel[:3])}")
         mat = np.zeros(9, dtype=np.float64)
         mujoco.mju_quat2Mat(mat, q_world.astype(np.float64))
         R = mat.reshape(3, 3)

@@ -150,6 +150,7 @@ public:
             std::cout << policy_name_ << " ONNX policy network test success" << std::endl;
         }
 
+        // Keep the legacy header implementation aligned with the active runner.
         decimation_ = 12;
     }
 
@@ -258,4 +259,3 @@ public:
         return ra;
     }
 };
-
